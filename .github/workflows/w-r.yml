@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout repository
@@ -14,11 +14,11 @@ jobs:
     - name: Set up R
       uses: r-lib/actions/setup-r@v2
       with:
-        r-version: '4.4.0'  # 指定 R 版本为 4.4.0
+        r-version: '4.4.0'
 
     - name: Install R packages
       run: |
-        Rscript -e 'install.packages(c("ggpubr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"))'
+        install.packages(c("ggpubr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"), repos="https://cran.rstudio.com")
 
     - name: Run R script
       run: |
