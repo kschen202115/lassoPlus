@@ -25,7 +25,7 @@ jobs:
 
     - name: Run R script
       run: |
-        Rscript your_script.R
+        Rscript LASSO_plus_parallel.R
 
     - name: Upload CSV file
       uses: actions/upload-artifact@v3
