@@ -18,7 +18,7 @@ jobs:
 
     - name: Install R packages
       run: |
-        install.packages(c("ggpubr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"), repos="https://cran.rstudio.com")
+        Rscript install.packages(c("ggpubr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"), repos="https://cran.rstudio.com")
 
     - name: Run R script
       run: |
