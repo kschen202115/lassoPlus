@@ -141,8 +141,8 @@ dataY0=resdata[[2]]
 #fixed_lambda <- 0.1
 grid <-  10^seq(2, -4, length = 100)
 randseed <- 1235673
-
-cl <- makeCluster(14)
+numCores <- detectCores()
+cl <- makeCluster(numCores)
 #registerDoParallel(cl)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = length(grid), style = 3)
