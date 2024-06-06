@@ -1,4 +1,4 @@
-name: R-CI
+name: w-R-CI
 
 on:
   workflow_dispatch:
