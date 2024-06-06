@@ -142,6 +142,7 @@ dataY0=resdata[[2]]
 grid <-  10^seq(2, -4, length = 100)
 randseed <- 1235673
 numCores <- detectCores()
+print(numCores)
 cl <- makeCluster(numCores)
 #registerDoParallel(cl)
 registerDoSNOW(cl)
