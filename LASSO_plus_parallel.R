@@ -260,7 +260,7 @@ results_df <- as.data.frame(do.call(rbind, results_2))
 
 # 给数据框添加列名
 colnames(results_df) <- c("LASSO_Accuracy", "GLM_Accuracy")
-
+stopCluster(cl)
 # 保存为CSV文件
 csv_file <- "results.csv"
 write.csv(results_df, file = csv_file, row.names = FALSE)
