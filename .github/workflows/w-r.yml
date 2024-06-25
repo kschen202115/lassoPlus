@@ -21,6 +21,7 @@ jobs:
         Rscript -e 'install.packages(c("ggpubr", "dplyr", "readr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"), repos="https://cran.rstudio.com")'
 
     - name: Run R script
+      id: Rscript
       run: |
         ls
         Rscript LASSO_plus_parallel.R
@@ -29,4 +30,18 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: result-csv
-        path: feature_selection_results.csv  # 请将其替换为你的 CSV 文件的实际路径
+        path: ./*.csv  # 请将其替换为你的 CSV 文件的实际路径
+        
+    - name: Upload image to Release
+      uses: ncipollo/release-action@main
+      if: steps.Rscript.outputs.status == 'success' && !cancelled()
+      with:
+          tag: lastest
+          artifacts: ./*.csv
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            处理结果
+
+
+  
