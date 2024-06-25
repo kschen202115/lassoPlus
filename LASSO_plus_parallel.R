@@ -159,7 +159,7 @@ test_data <- shuffled_data %>% slice(151:n())
 # 提取训练集特征和标签
 x_train <- as.matrix(train_data %>% select(-Class))
 y_train <- train_data$Class
-x_train <- scale(x_train)
+
 
 dataX0=x_train
 dataY0=y_train
