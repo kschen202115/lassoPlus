@@ -130,35 +130,47 @@ loaddata=function(OCDfile,sheetname,sbjsel_flag) {
 
 
 
-# 下载数据集文件并读取
-url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data"
-data <- read_csv(url, col_names = FALSE)
+# # 下载数据集文件并读取
+# url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data"
+# data <- read_csv(url, col_names = FALSE)
 
-# 设置列名（特征列）
-feature_names <- paste0("V", 1:279)
-colnames(data) <- c(feature_names, "Class")
+data <- read.csv("TUNADROMD.csv")
 
-# 将 Class 列转换为二分类：1 为正常心律，其他为不正常心律
-data <- data %>%
-  mutate(Class = ifelse(Class == 1, 1, 0))
+# # 设置列名（特征列）
+# feature_names <- paste0("V", 1:279)
+# colnames(data) <- c(feature_names, "Class")
 
-# 选取了1到279列，特征量
-selected_features <- feature_names[1:279]
-filtered_data <- data %>% select(all_of(selected_features), Class)
+# # 将 Class 列转换为二分类：1 为正常心律，其他为不正常心律
+# data <- data %>%
+#   mutate(Class = ifelse(Class == 1, 1, 0))
 
-# 随机打乱数据集
-set.seed(123) # 为了可重复性设置随机种子
-shuffled_data <- filtered_data %>% sample_frac()
+# # 选取了1到279列，特征量
+# selected_features <- feature_names[1:279]
+# filtered_data <- data %>% select(all_of(selected_features), Class)
 
-# 随机选择 150 个样本作为训练集
-train_data <- shuffled_data %>% slice(1:150)
+# # 随机打乱数据集
+# set.seed(123) # 为了可重复性设置随机种子
+# shuffled_data <- filtered_data %>% sample_frac()
 
-# 将剩余的样本作为测试集
-test_data <- shuffled_data %>% slice(151:n())
+# # 随机选择 150 个样本作为训练集
+# # train_data <- shuffled_data %>% slice(1:150)
 
-# 提取训练集特征和标签
-x_train <- as.matrix(train_data %>% select(-Class))
-y_train <- train_data$Class
+# # 将剩余的样本作为测试集
+# test_data <- shuffled_data %>% slice(151:n())
+
+# # 提取训练集特征和标签
+# x_train <- as.matrix(train_data %>% select(-Class))
+# y_train <- train_data$Class
+
+X <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
+y <- as.factor(data[, ncol(data)])  # 目标变量
+
+set.seed(123)
+train_indices <- sample(1:nrow(X), 150)
+X_train <- X[train_indices, ]
+y_train <- y[train_indices]
+X_test <- X[-train_indices, ]
+y_test <- y[-train_indices]
 
 
 dataX0=x_train
