@@ -17,8 +17,8 @@ library(doSNOW)
 library(readr)
 library(dplyr)
 
-# currdir = dirname(this.path())
-# setwd(currdir)
+currdir = dirname(this.path())
+setwd(currdir)
 
 # 提取特征表
 get_feature_table <- function(dataX, sorted_indices) {
@@ -31,30 +31,21 @@ get_feature_table <- function(dataX, sorted_indices) {
 trylasso=function(dataX0, dataY0, randseed, hyper) {
 
   set.seed(randseed)
-
-
   sbjtype1=which(dataY0==1)
   sbjtype0=which(dataY0==0)
   sbjtype1sel=sample(sbjtype1,length(sbjtype1)-5)     # 治愈组随机减去5人
   sbjtype0sel=sample(sbjtype0,length(sbjtype0)-5)     # 非治愈组随机减去5人
   # 剩余样本，为training样本。剩余的5人，为test样本（在特征筛选阶段，test样本不起作用）
-
   sbjsel=c(sbjtype0sel,sbjtype1sel);
-
   dataX=dataX0[sbjsel,]
   dataY=dataY0[sbjsel]
-
   dataXtest=dataX0[-sbjsel,]
   dataYtest=dataY0[-sbjsel]
 
   fit<- glmnet(dataX,dataY,family = "binomial",lambda = hyper,alpha = 1)    # training model
   roilog=which(coef(fit)!=0)-1         # index of selected feature (-1 means index of intercept is removed)
 
-  #dataY_pred=predict(fit,dataX,lambda=hyper,type='class')
-  #accmax=sum(dataY_pred==dataY)/length(dataY)
-
-  #dataYtest_pred=predict(fit,dataXtest,lambda=hyper,type='class')
-  #accmax_test=sum(dataYtest_pred==dataYtest)/length(dataYtest)
+###临时，占位用的
   accmax = 0
   accmax_test = 0
 
@@ -83,56 +74,18 @@ logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
 
   feature_table_scaled <- as.data.frame(dataX_glm)
   feature_table_scaled_test <- as.data.frame(dataXtest_glm)
-  # feature_table_scaled[] <- lapply(feature_table_scaled, as.numeric)   # 转换为数值型数据
-  # feature_table_scaled_test[] <- lapply(feature_table_scaled_test, as.numeric)
 
   # 逻辑回归
   logistic_model <- glm(dataY_glm ~ ., data = feature_table_scaled, family = binomial)
-  # #训练集
-  # train_predictions <- predict(logistic_model, newdata = feature_table_scaled, type = "response")
-  # train_pred_classes <- ifelse(train_predictions > 0.5, 1, 0)
-  # train_accuracy <- sum(train_pred_classes == dataY_glm) / length(dataY_glm)
-  # #cat("训练集准确率:", train_accuracy, "\n")
-  # #测试集
   test_predictions <- predict(logistic_model, newdata = feature_table_scaled_test, type = "response")
   test_pred_classes <- ifelse(test_predictions > 0.5, 1, 0)
   test_accuracy <- sum(test_pred_classes == dataYtest_glm) / length(dataYtest_glm)
-  #cat("测试集准确率:", test_accuracy, "\n")
   return(list(model = logistic_model, accuracy = test_accuracy))
 }
 
 
-# # 下载数据集文件并读取
-# url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data"
-# data <- read_csv(url, col_names = FALSE)
 
 data <- read.csv("TUANDROMD.csv")
-
-# # 设置列名（特征列）
-# feature_names <- paste0("V", 1:279)
-# colnames(data) <- c(feature_names, "Class")
-
-# # 将 Class 列转换为二分类：1 为正常心律，其他为不正常心律
-# data <- data %>%
-#   mutate(Class = ifelse(Class == 1, 1, 0))
-
-# # 选取了1到279列，特征量
-# selected_features <- feature_names[1:279]
-# filtered_data <- data %>% select(all_of(selected_features), Class)
-
-# # 随机打乱数据集
-# set.seed(123) # 为了可重复性设置随机种子
-# shuffled_data <- filtered_data %>% sample_frac()
-
-# # 随机选择 150 个样本作为训练集
-# # train_data <- shuffled_data %>% slice(1:150)
-
-# # 将剩余的样本作为测试集
-# test_data <- shuffled_data %>% slice(151:n())
-
-# # 提取训练集特征和标签
-# x_train <- as.matrix(train_data %>% select(-Class))
-# y_train <- train_data$Class
 
 x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
@@ -141,6 +94,7 @@ set.seed(123)
 train_indices <- sample(1:nrow(x), 150)
 x_train <- x[train_indices, ]
 y_train <- y[train_indices]
+
 x_test <- x[-train_indices, ]
 y_test <- y[-train_indices]
 
@@ -148,21 +102,16 @@ y_test <- y[-train_indices]
 dataX0=x_train
 dataY0=y_train
 
-# 固定的 lambda 值
-#fixed_lambda <- 0.1
+
 grid <-  10^seq(2, -4, length = 100)
 randseed <- 1235673
 numCores <- detectCores()
 print(numCores)
 cl <- makeCluster(numCores)
-#registerDoParallel(cl)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = length(grid), style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress=progress)
-
-
-  
 
 foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('glmnet'),.inorder=TRUE,.options.snow=opts) %dopar% {
   best_feature_table = c()
@@ -181,18 +130,12 @@ foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('
       feature_counts[roilog] <- feature_counts[roilog] + 1
     }
   }
-
   # 对特征选择次数进行降序排序
   sorted_indices <- order(feature_counts, decreasing = TRUE)
-
   # 去除出现次数为0的特征索引
   sorted_indices <- sorted_indices[feature_counts[sorted_indices] > 0]
-
-
   #排除特征数量小于2的，不晓得为什么小于2会出问题，2似乎没问题
   if (length(sorted_indices) >= 2){
-  #   next
-  # }
   #进行切片
     ll = length(sorted_indices)
     if (length(sorted_indices) > 50){
@@ -214,17 +157,8 @@ foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('
             a_accuracy = result$accuracy + a_accuracy
             m_accuracy = a_accuracy/nn
           }
-          #cat(i,"-accuracy",accuracy,"m_accuracy",a_accuracy,"\n")
         }
-        #cat("测试集平均准确率:", m_accuracy, "\n")
-
-        #我也不晓得为什么会出现长度为0
-        # if (length(m_accuracy)!=0 && length(best_accuracy)!=0 ){
-        #   next
-        # }
         min_selected_count <- min(feature_counts[spilted_indices])
-        
-        
       }
       local_results <- rbind(local_results, data.frame(FixedLambda = fixed_lambda, Indices = paste(spilted_indices, collapse = ","), Accuracy = m_accuracy,freq = min_selected_count))
     }
@@ -232,12 +166,101 @@ foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('
   return(local_results)
 }
 print("结束啦")
-#print(foreach_result)
 results <- foreach_result
-
 # 保存所有特征索引及其准确率
 write.csv(results, "feature_selection_results.csv", row.names = FALSE)
-
-#write_xlsx(results, "feature_selection_results.xlsx")
-
 stopCluster(cl)
+
+
+# 读取结果数据
+results <- read.csv("feature_selection_results.csv")
+
+# 过滤出频率大于500的结果
+filtered_results <- results %>% filter(freq > 500)
+
+# 找到最高的准确率
+max_accuracy <- max(filtered_results$Accuracy)
+
+# 筛选出最高准确率的结果
+best_results <- filtered_results %>% filter(Accuracy == max_accuracy)
+
+# 如果出现多个准确率相同的结果，则选择特征数量最少的组合
+min_feature_count <- min(nchar(best_results$Indices))
+best_results_min_features <- best_results %>% filter(nchar(Indices) == min_feature_count)
+
+# 如果特征数量和准确率相同，则选择频率最高的组合
+final_result <- best_results_min_features %>% filter(freq == max(freq))
+
+# 将最终选择的特征组合的Indices赋值给feature_list
+feature_list <- final_result$Indices
+
+# 显示或保存最终选择的特征组合
+print(final_result)
+print(paste("Selected Feature List: ", feature_list))
+
+# 保存最终结果
+write.csv(final_result, "best_feature_selection.csv", row.names = FALSE)
+
+
+####俩个模型
+
+###传统lasso###
+# 使用Lasso进行特征选择
+cat("使用Lasso进行特征选择\n")
+cv_fit <- cv.glmnet(dataX0, dataY0, family = "binomial", alpha = 1)
+# 获取最佳lambda值
+best_lambda <- cv_fit$lambda.min
+# 使用最佳lambda值训练glm模型
+selected_features <- which(coef(lasso_model) != 0)[-1]
+dataX0_selected_glm <- dataX0[, selected_features]
+logistic_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_glm), family = binomial)
+
+
+dataX0_selected_lasso <- dataX0[, feature_list]
+my_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_lasso), family = binomial)
+##进行1000次test
+
+cl <- makeCluster(numCores)
+registerDoSNOW(cl)
+pb <- txtProgressBar(min = 0, max = 1000, style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress=progress)
+
+
+
+foreach_result_2 <- foreach(id = 1:1000, .combine = rbind, .packages = c('glmnet'),.inorder=TRUE,.options.snow=opts) %dopar% {
+  set.seed(Sys.time() + id)
+
+  sbjtype1=which(y_test==1)
+  sbjtype0=which(y_test==0)
+  sbjtype1sel=sample(sbjtype1,100)     # 1取100个
+  sbjtype0sel=sample(sbjtype0,100)     # 0取100个
+
+  sbjsel=c(sbjtype0sel,sbjtype1sel);
+  test_dataX = x_test[sbjsel,]
+  test_dataY = y_test[sbjsel]
+
+  test_dataX_selected_glm = test_dataX[, selected_features]
+  test_dataX_selected_lasso = test_dataX[, feature_list]
+
+  predictions_glm <- predict(logistic_model, newdata = data.frame(test_dataX_selected_glm), type = "response")
+  predicted_classes_glm <- ifelse(predictions > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
+  glm_accuracy <- sum(predicted_classes_glm == test_dataY) / length(test_dataY)
+
+  predictions_lasso <- predict(my_model, newdata = data.frame(test_dataX_selected_lasso), type = "response")
+  predicted_classes_lassso <- ifelse(predictions > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
+  lasso_accuracy <- sum(predicted_classes_lasso == test_dataY) / length(test_dataY)
+
+  return(list(lasso_accuracy,glm_accuracy))
+}
+
+results_2 <- foreach_result_2
+
+results_df <- as.data.frame(do.call(rbind, results_2))
+
+# 给数据框添加列名
+colnames(results_df) <- c("LASSO_Accuracy", "GLM_Accuracy")
+
+# 保存为CSV文件
+csv_file <- "results.csv"
+write.csv(results_df, file = csv_file, row.names = FALSE)
