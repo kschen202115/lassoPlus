@@ -23,6 +23,7 @@ setwd(currdir)
 # 提取特征表
 get_feature_table <- function(dataX, sorted_indices) {
   feature_table <- dataX[, sorted_indices]
+  feature_table[] <- lapply(feature_table, as.numeric)
   return(feature_table)
 }
 
@@ -82,6 +83,8 @@ logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
 
   feature_table_scaled <- as.data.frame(dataX_glm)
   feature_table_scaled_test <- as.data.frame(dataXtest_glm)
+  feature_table_scaled[] <- lapply(feature_table_scaled, as.numeric)   # 转换为数值型数据
+  feature_table_scaled_test[] <- lapply(feature_table_scaled_test, as.numeric)
 
   # 逻辑回归
   logistic_model <- glm(dataY_glm ~ ., data = feature_table_scaled, family = binomial)
