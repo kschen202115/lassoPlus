@@ -143,8 +143,6 @@ data <- data %>%
 selected_features <- feature_names[1:279]
 filtered_data <- data %>% select(all_of(selected_features), Class)
 
-filtered_data <- scale(filtered_data)
-
 # 随机打乱数据集
 set.seed(123) # 为了可重复性设置随机种子
 shuffled_data <- filtered_data %>% sample_frac()
@@ -158,6 +156,7 @@ test_data <- shuffled_data %>% slice(151:n())
 # 提取训练集特征和标签
 x_train <- as.matrix(train_data %>% select(-Class))
 y_train <- train_data$Class
+x_train <- scale(x_train)
 
 dataX0=x_train
 dataY0=y_train
