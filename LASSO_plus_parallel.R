@@ -101,34 +101,6 @@ logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
   return(list(model = logistic_model, accuracy = test_accuracy))
 }
 
-# =============== load data
-loaddata=function(OCDfile,sheetname,sbjsel_flag) {
-  # ============== load data ================
-  data0=read_xlsx(OCDfile,'缓解率')
-  data1=read_xlsx(OCDfile,sheetname)
-  tmpdata_rTMS=matrix(1,31,1)
-  tmpdata_cTBS=matrix(2,48,1)
-  tmpdata_TMS=as.data.frame(rbind(tmpdata_rTMS,tmpdata_cTBS))
-  tmpdata0=cbind(tmpdata_TMS,data0[,c(4:6,8,10:12)])
-  extralist=c('TMStype','sex','age',
-              'HAMApre','HAMDpre',
-              'ThoughtPre','BehavePre','Y_BOCSpre')
-  names(tmpdata0)[1:length(extralist)]=extralist
-  
-  if (sbjsel_flag==1) {
-    sbjsel=tmpdata0$ThoughtPre>=10 | tmpdata0$BehavePre>=10 | tmpdata0$Y_BOCSpre>=15
-    dataX=cbind(tmpdata0[sbjsel,],data1[sbjsel,2:(roimax+1)])
-    dataY=as.factor(data1$response[sbjsel])
-  } else {
-    dataX=cbind(tmpdata0,data1[,2:(roimax+1)])
-    dataY=as.factor(data1$response)
-  }
-  dataX[]=lapply(dataX,as.numeric)
-  dataX=scale(dataX)     # SVM中需要标准化
-  return(list(dataX, dataY))
-}
-
-
 
 # # 下载数据集文件并读取
 # url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data"
@@ -166,7 +138,7 @@ x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
 
 set.seed(123)
-train_indices <- sample(1:nrow(X), 150)
+train_indices <- sample(1:nrow(x), 150)
 x_train <- x[train_indices, ]
 y_train <- y[train_indices]
 x_test <- x[-train_indices, ]
