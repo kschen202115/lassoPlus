@@ -134,7 +134,7 @@ loaddata=function(OCDfile,sheetname,sbjsel_flag) {
 # url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data"
 # data <- read_csv(url, col_names = FALSE)
 
-data <- read.csv("TUNADROMD.csv")
+data <- read.csv("TUANDROMD.csv")
 
 # # 设置列名（特征列）
 # feature_names <- paste0("V", 1:279)
