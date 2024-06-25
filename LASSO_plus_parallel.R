@@ -14,6 +14,8 @@ library(foreach)
 library(doParallel)
 library(writexl)
 library(doSNOW)
+library(readr)
+library(dplyr)
 
 currdir = dirname(this.path())
 setwd(currdir)
