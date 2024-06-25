@@ -125,17 +125,38 @@ loaddata=function(OCDfile,sheetname,sbjsel_flag) {
 
 
 
-OCDfile='AAL_OCD_79_all.xlsx'
-sheetmat=c('fisherZ-FC_pre-SMA')
-sbjsel_flag=1 
-roimax=90
-data0=read_xlsx(OCDfile,'缓解率')
-data1=read_xlsx(OCDfile,sheet=sheetmat)
+# 下载数据集文件并读取
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data"
+data <- read_csv(url, col_names = FALSE)
 
+# 设置列名（特征列）
+feature_names <- paste0("V", 1:279)
+colnames(data) <- c(feature_names, "Class")
 
-resdata=loaddata(OCDfile,sheetmat,sbjsel_flag)
-dataX0=resdata[[1]]
-dataY0=resdata[[2]]
+# 将 Class 列转换为二分类：1 为正常心律，其他为不正常心律
+data <- data %>%
+  mutate(Class = ifelse(Class == 1, 1, 0))
+
+# 选取了1到279列，特征量
+selected_features <- feature_names[1:279]
+filtered_data <- data %>% select(all_of(selected_features), Class)
+
+# 随机打乱数据集
+set.seed(123) # 为了可重复性设置随机种子
+shuffled_data <- filtered_data %>% sample_frac()
+
+# 随机选择 150 个样本作为训练集
+train_data <- shuffled_data %>% slice(1:150)
+
+# 将剩余的样本作为测试集
+test_data <- shuffled_data %>% slice(151:n())
+
+# 提取训练集特征和标签
+x_train <- as.matrix(train_data %>% select(-Class))
+y_train <- train_data$Class
+
+dataX0=x_train
+dataY0=y_train
 
 # 固定的 lambda 值
 #fixed_lambda <- 0.1
