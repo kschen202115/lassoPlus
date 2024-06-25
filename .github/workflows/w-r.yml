@@ -22,6 +22,7 @@ jobs:
 
     - name: Run R script
       run: |
+        ls
         Rscript LASSO_plus_parallel.R
 
     - name: Upload CSV file
