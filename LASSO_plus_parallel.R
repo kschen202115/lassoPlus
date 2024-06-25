@@ -162,14 +162,14 @@ data <- read.csv("TUANDROMD.csv")
 # x_train <- as.matrix(train_data %>% select(-Class))
 # y_train <- train_data$Class
 
-X <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
+x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
 
 set.seed(123)
 train_indices <- sample(1:nrow(X), 150)
-X_train <- X[train_indices, ]
+x_train <- x[train_indices, ]
 y_train <- y[train_indices]
-X_test <- X[-train_indices, ]
+x_test <- x[-train_indices, ]
 y_test <- y[-train_indices]
 
 
