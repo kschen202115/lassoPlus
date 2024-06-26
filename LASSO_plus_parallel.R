@@ -205,15 +205,18 @@ write.csv(final_result, "best_feature_selection.csv", row.names = FALSE)
 ####俩个模型
 
 ###传统lasso###
-# 使用Lasso进行特征选择
 cat("使用Lasso进行特征选择\n")
+
+# 使用Lasso进行特征选择并进行交叉验证
+lasso_model <- glmnet(dataX0, dataY0, family = "binomial", nlambda = 1000, alpha = 1)
 cv_fit <- cv.glmnet(dataX0, dataY0, family = "binomial", alpha = 1)
+
 # 获取最佳lambda值
 best_lambda <- cv_fit$lambda.min
-# 使用最佳lambda值训练glm模型
-selected_features <- which(coef(lasso_model) != 0)[-1]
-dataX0_selected_glm <- dataX0[, selected_features]
-logistic_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_glm), family = binomial)
+
+# 使用最佳lambda值提取特征
+best_model <- glmnet(dataX0, dataY0, family = "binomial", alpha = 1, lambda = best_lambda)
+selected_features <- which(coef(best_model) != 0)[-1]
 
 
 dataX0_selected_lasso <- dataX0[, feature_list]
