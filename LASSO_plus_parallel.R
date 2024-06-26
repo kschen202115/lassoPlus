@@ -224,7 +224,7 @@ dataX0_selected_lasso <- dataX0[, feature_list]
 my_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_lasso), family = binomial)
 ##进行1000次test
 
-cl <- makeCluster(10)
+cl <- makeCluster(numCores)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = 1000, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
