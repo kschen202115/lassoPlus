@@ -258,6 +258,6 @@ foreach_result_2 <- foreach(id = 1:1000, .combine = rbind, .packages = c('glmnet
 
 stopCluster(cl)
 results_df <- as.data.frame(foreach_result_2)
-colnames(results_df) <- c("LASSO_Accuracy", "GLM_Accuracy")
+colnames(results_df) <- c("LASSO_Plus_Accuracy", "GLM_Accuracy")
 write.csv(results_df, file = "results.csv", row.names = FALSE)
 cat("Results saved successfully.\n")
