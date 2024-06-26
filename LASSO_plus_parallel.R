@@ -192,7 +192,9 @@ best_results_min_features <- best_results %>% filter(nchar(Indices) == min_featu
 final_result <- best_results_min_features %>% filter(freq == max(freq))
 
 # 将最终选择的特征组合的Indices赋值给feature_list
-feature_list <- final_result$Indices
+indices_string <- final_result$Indices
+indices_char <- unlist(strsplit(indices_string, ","))
+feature_list <- as.numeric(indices_char)
 
 # 显示或保存最终选择的特征组合
 print(final_result)
@@ -201,9 +203,7 @@ print(paste("Selected Feature List: ", feature_list))
 # 保存最终结果
 write.csv(final_result, "best_feature_selection.csv", row.names = FALSE)
 
-
-####俩个模型
-
+####训练俩个模型####
 ###传统lasso###
 cat("使用Lasso进行特征选择\n")
 
@@ -217,53 +217,47 @@ best_lambda <- cv_fit$lambda.min
 # 使用最佳lambda值提取特征
 best_model <- glmnet(dataX0, dataY0, family = "binomial", alpha = 1, lambda = best_lambda)
 selected_features <- which(coef(best_model) != 0)[-1]
-
+dataX0_selected_glm <- dataX0[, selected_features]
+logistic_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_glm), family = binomial)
 
 dataX0_selected_lasso <- dataX0[, feature_list]
 my_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_lasso), family = binomial)
 ##进行1000次test
 
-cl <- makeCluster(numCores)
+cl <- makeCluster(10)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = 1000, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress=progress)
 
-
-
 foreach_result_2 <- foreach(id = 1:1000, .combine = rbind, .packages = c('glmnet'),.inorder=TRUE,.options.snow=opts) %dopar% {
-  set.seed(Sys.time() + id)
+    set.seed(Sys.time() + id)
 
-  sbjtype1=which(y_test==1)
-  sbjtype0=which(y_test==0)
-  sbjtype1sel=sample(sbjtype1,100)     # 1取100个
-  sbjtype0sel=sample(sbjtype0,100)     # 0取100个
+    sbjtype1=which(y_test==1)
+    sbjtype0=which(y_test==0)
+    sbjtype1sel=sample(sbjtype1,100)     # 1取100个
+    sbjtype0sel=sample(sbjtype0,100)     # 0取100个
 
-  sbjsel=c(sbjtype0sel,sbjtype1sel);
-  test_dataX = x_test[sbjsel,]
-  test_dataY = y_test[sbjsel]
+    sbjsel=c(sbjtype0sel,sbjtype1sel);
+    test_dataX = x_test[sbjsel,]
+    test_dataY = y_test[sbjsel]
 
-  test_dataX_selected_glm = test_dataX[, selected_features]
-  test_dataX_selected_lasso = test_dataX[, feature_list]
+    test_dataX_selected_glm = test_dataX[, selected_features]
+    test_dataX_selected_lasso = test_dataX[, feature_list]
 
-  predictions_glm <- predict(logistic_model, newdata = data.frame(test_dataX_selected_glm), type = "response")
-  predicted_classes_glm <- ifelse(predictions > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
-  glm_accuracy <- sum(predicted_classes_glm == test_dataY) / length(test_dataY)
+    predictions_glm <- predict(logistic_model, newdata = data.frame(test_dataX_selected_glm), type = "response")
+    predicted_classes_glm <- ifelse(predictions_glm > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
+    glm_accuracy <- sum(predicted_classes_glm == test_dataY) / length(test_dataY)
 
-  predictions_lasso <- predict(my_model, newdata = data.frame(test_dataX_selected_lasso), type = "response")
-  predicted_classes_lassso <- ifelse(predictions > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
-  lasso_accuracy <- sum(predicted_classes_lasso == test_dataY) / length(test_dataY)
+    predictions_lasso <- predict(my_model, newdata = data.frame(test_dataX_selected_lasso), type = "response")
+    predicted_classes_lasso <- ifelse(predictions_lasso > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
+    lasso_accuracy <- sum(predicted_classes_lasso == test_dataY) / length(test_dataY)
 
-  return(list(lasso_accuracy,glm_accuracy))
+  return(c(lasso_accuracy, glm_accuracy))
 }
 
-results_2 <- foreach_result_2
-
-results_df <- as.data.frame(do.call(rbind, results_2))
-
-# 给数据框添加列名
-colnames(results_df) <- c("LASSO_Accuracy", "GLM_Accuracy")
 stopCluster(cl)
-# 保存为CSV文件
-csv_file <- "results.csv"
-write.csv(results_df, file = csv_file, row.names = FALSE)
+results_df <- as.data.frame(foreach_result_2)
+colnames(results_df) <- c("LASSO_Accuracy", "GLM_Accuracy")
+write.csv(results_df, file = "results.csv", row.names = FALSE)
+cat("Results saved successfully.\n")
