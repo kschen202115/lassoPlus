@@ -2,6 +2,11 @@ name: w-R-CI
 
 on:
   workflow_dispatch:
+    inputs:
+      train_num:
+        description: 'Enter the value for train_num'
+        required: true
+        default: '1'
 
 jobs:
   build:
@@ -24,7 +29,8 @@ jobs:
       id: Rscript
       run: |
         ls
-        Rscript LASSO_plus_parallel.R
+        train_num="${{ github.event.inputs.train_num }}"
+        Rscript LASSO_plus_parallel.R  ${train_num}
 
     - name: Upload CSV file
       uses: actions/upload-artifact@v3
@@ -32,16 +38,6 @@ jobs:
         name: result-csv
         path: ./*.csv  # 请将其替换为你的 CSV 文件的实际路径
         
-    - name: Upload image to Release
-      uses: ncipollo/release-action@main
-      if: steps.Rscript.outputs.status == 'success' && !cancelled()
-      with:
-          tag: lastest
-          artifacts: ./*.csv
-          allowUpdates: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            处理结果
 
 
   
