@@ -90,8 +90,8 @@ data <- read.csv("TUANDROMD.csv")
 x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
 
-set.seed(123)
-train_indices <- sample(1:nrow(x), 150)
+set.seed(1234)
+train_indices <- sample(1:nrow(x), 1500)
 x_train <- x[train_indices, ]
 y_train <- y[train_indices]
 
