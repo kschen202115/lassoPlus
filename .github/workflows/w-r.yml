@@ -30,7 +30,9 @@ jobs:
       run: |
         ls
         train_num="${{ github.event.inputs.train_num }}"
-        Rscript LASSO_plus_parallel.R  ${train_num}
+        echo "train_num=$train_num" >> $GITHUB_ENV
+        
+        Rscript LASSO_plus_parallel.R  $train_num
 
     - name: Upload CSV file
       uses: actions/upload-artifact@v3
