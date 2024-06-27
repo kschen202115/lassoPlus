@@ -251,7 +251,7 @@ best_lambda <- cv_fit$lambda.min
 
 # 使用最佳lambda值提取特征
 best_model <- glmnet(dataX0, dataY0, family = "binomial", alpha = 1, lambda = best_lambda)
-selected_features <- which(coef(best_model) != 0)[-1]
+selected_features <- which(coef(best_model) != 0)[-1]-1
 dataX0_selected_glm <- dataX0[, selected_features]
 logistic_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_glm), family = binomial)
 
