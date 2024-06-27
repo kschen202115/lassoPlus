@@ -26,8 +26,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # 确保提供了参数
 if (length(args) != 0) {
   train_num <- as.numeric(args[1])
-}
-else{
+}else{
   train_num <- 1
 }
 print('##################################')
