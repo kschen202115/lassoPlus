@@ -206,7 +206,7 @@ stopCluster(cl)
 
 
 # 读取结果数据
-results <- read.csv("feature_selection_results.csv")
+results <- read.csv(feature_selection_results_name)
 
 # 过滤出频率大于500的结果
 filtered_results <- results %>% filter(freq > 500)
