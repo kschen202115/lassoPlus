@@ -30,8 +30,9 @@ if (length(args) != 0) {
 else{
   train_num <- 1
 }
-
-
+print('##################################')
+print(train_num)
+print('##################################')
 
 # 提取特征表
 get_feature_table <- function(dataX, sorted_indices) {
