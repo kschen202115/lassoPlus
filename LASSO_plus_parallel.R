@@ -107,7 +107,7 @@ set.seed(1234)
 train_indices <- sample(1:nrow(x), 1500)
 
 # 将train_indices分割为10份
-train_indices_split <- split(train_indices, sort(train_indices %% 10))
+train_indices_split <- split(train_indices, cut(seq_along(train_indices), 10, labels = FALSE))
 
 train_indices_x <- train_indices_split[[train_num]]
 
