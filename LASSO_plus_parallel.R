@@ -225,7 +225,7 @@ best_results_min_features <- best_results %>% filter(nchar(Indices) == min_featu
 final_result <- best_results_min_features %>% filter(freq == max(freq))
 
 # 将最终选择的特征组合的Indices赋值给feature_list
-indices_string <- final_result$Indices
+indices_string <- final_result$Indices[1]
 indices_char <- unlist(strsplit(indices_string, ","))
 feature_list <- as.numeric(indices_char)
 
