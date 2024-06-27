@@ -20,6 +20,19 @@ library(dplyr)
 currdir = dirname(this.path())
 setwd(currdir)
 
+# 获取命令行参数
+args <- commandArgs(trailingOnly = TRUE)
+
+# 确保提供了参数
+if (length(args) != 0) {
+  train_num <- as.numeric(args[1])
+}
+else{
+  train_num <- 1
+}
+
+
+
 # 提取特征表
 get_feature_table <- function(dataX, sorted_indices) {
   feature_table <- dataX[, sorted_indices]
@@ -92,11 +105,27 @@ y <- as.factor(data[, ncol(data)])  # 目标变量
 
 set.seed(1234)
 train_indices <- sample(1:nrow(x), 1500)
-x_train <- x[train_indices, ]
-y_train <- y[train_indices]
 
-x_test <- x[-train_indices, ]
-y_test <- y[-train_indices]
+# 将train_indices分割为10份
+train_indices_split <- split(train_indices, sort(train_indices %% 10))
+
+train_indices_x <- train_indices_split[[train_num]]
+
+x_train <- x[train_indices_x, ]
+y_train <- y[train_indices_x]
+
+# 将训练数据合并成一个数据框
+train_data <- data.frame(x_train)
+train_data$Label <- y_train
+
+# 动态生成文件名
+train_data_name <- paste0("train_data_",train_num, ".csv")
+
+# 保存训练数据到CSV文件
+write.csv(train_data, train_data_name, row.names = FALSE)
+
+x_test <- x[-train_indices_x, ]
+y_test <- y[-train_indicesx_X]
 
 
 dataX0=x_train
@@ -168,7 +197,11 @@ foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('
 print("结束啦")
 results <- foreach_result
 # 保存所有特征索引及其准确率
-write.csv(results, "feature_selection_results.csv", row.names = FALSE)
+
+# 动态生成文件名
+feature_selection_results_name <- paste0("feature_selection_results_",train_num, ".csv")
+
+write.csv(results, feature_selection_results_name, row.names = FALSE)
 stopCluster(cl)
 
 
@@ -201,7 +234,9 @@ print(final_result)
 print(paste("Selected Feature List: ", feature_list))
 
 # 保存最终结果
-write.csv(final_result, "best_feature_selection.csv", row.names = FALSE)
+# 动态生成文件名
+best_feature_selection_name <- paste0("best_feature_selection_",train_num, ".csv")
+write.csv(final_result, best_feature_selection_name, row.names = FALSE)
 
 ####训练俩个模型####
 ###传统lasso###
@@ -231,7 +266,8 @@ progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress=progress)
 
 foreach_result_2 <- foreach(id = 1:1000, .combine = rbind, .packages = c('glmnet'),.inorder=TRUE,.options.snow=opts) %dopar% {
-    set.seed(Sys.time() + id)
+    random_seed <- 1234 + id
+    set.seed(random_seed)
 
     sbjtype1=which(y_test==1)
     sbjtype0=which(y_test==0)
@@ -253,11 +289,14 @@ foreach_result_2 <- foreach(id = 1:1000, .combine = rbind, .packages = c('glmnet
     predicted_classes_lasso <- ifelse(predictions_lasso > 0.5, 1, 0)  # 使用0.5作为阈值进行分类
     lasso_accuracy <- sum(predicted_classes_lasso == test_dataY) / length(test_dataY)
 
-  return(c(lasso_accuracy, glm_accuracy))
+  return(c(lasso_accuracy, glm_accuracy,random_seed))
 }
 
 stopCluster(cl)
 results_df <- as.data.frame(foreach_result_2)
-colnames(results_df) <- c("LASSO_Plus_Accuracy", "GLM_Accuracy")
-write.csv(results_df, file = "results.csv", row.names = FALSE)
+colnames(results_df) <- c("LASSO_Plus_Accuracy", "GLM_Accuracy", "random_seed")
+
+results_name <- paste0("results_",train_num, ".csv")
+
+write.csv(results_df, file = results_name, row.names = FALSE)
 cat("Results saved successfully.\n")
