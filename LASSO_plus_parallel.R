@@ -125,7 +125,7 @@ train_data_name <- paste0("train_data_",train_num, ".csv")
 write.csv(train_data, train_data_name, row.names = FALSE)
 
 x_test <- x[-train_indices_x, ]
-y_test <- y[-train_indicesx_X]
+y_test <- y[-train_indicesx_x]
 
 
 dataX0=x_train
