@@ -144,7 +144,7 @@ foreach_result <- foreach(cost = grid, .combine = rbind, .packages = c('e1071'),
   num_features <- ncol(dataX0)
   feature_counts <- integer(num_features)
   # 循环1000次
-  for (i in 1:10) {
+  for (i in 1:1000) {
     res <- trysvm(dataX0, dataY0, randseed + i, cost)
     roilog <- res[[1]]
     # 更新特征选择次数
@@ -172,7 +172,7 @@ foreach_result <- foreach(cost = grid, .combine = rbind, .packages = c('e1071'),
         # 逻辑回归
         a_accuracy = 0
         nn = 0
-        for (j in 1:10) {
+        for (j in 1:1000) {
           result = logistic_regression(dataX0, dataY0, randseed + j, feature_table)
           if (length(result$accuracy) > 0 && !is.na(result$accuracy)) {
             nn = nn + 1
@@ -202,7 +202,7 @@ stopCluster(cl)
 results <- read.csv(feature_selection_results_name)
 
 # 过滤出频率大于500的结果
-filtered_results <- results %>% filter(freq > 5)
+filtered_results <- results %>% filter(freq > 500)
 
 # 找到最高的准确率
 max_accuracy <- max(filtered_results$Accuracy)
