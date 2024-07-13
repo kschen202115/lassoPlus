@@ -98,7 +98,7 @@ logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
 
 
 
-data <- read.csv("TUANDROMD.csv")
+data <- read.csv("musk.csv")
 
 x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
