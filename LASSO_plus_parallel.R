@@ -144,7 +144,7 @@ foreach_result <- foreach(cost = grid, .combine = rbind, .packages = c('e1071'),
   num_features <- ncol(dataX0)
   feature_counts <- integer(num_features)
   # 循环1000次
-  for (i in 1:1000) {
+  for (i in 1:10) {
     res <- trysvm(dataX0, dataY0, randseed + i, cost)
     roilog <- res[[1]]
     # 更新特征选择次数
@@ -172,7 +172,7 @@ foreach_result <- foreach(cost = grid, .combine = rbind, .packages = c('e1071'),
         # 逻辑回归
         a_accuracy = 0
         nn = 0
-        for (j in 1:1000) {
+        for (j in 1:10) {
           result = logistic_regression(dataX0, dataY0, randseed + j, feature_table)
           if (length(result$accuracy) > 0 && !is.na(result$accuracy)) {
             nn = nn + 1
@@ -202,7 +202,7 @@ stopCluster(cl)
 results <- read.csv(feature_selection_results_name)
 
 # 过滤出频率大于500的结果
-filtered_results <- results %>% filter(freq > 500)
+filtered_results <- results %>% filter(freq > 5)
 
 # 找到最高的准确率
 max_accuracy <- max(filtered_results$Accuracy)
@@ -235,16 +235,14 @@ write.csv(final_result, best_feature_selection_name, row.names = FALSE)
 ###传统lasso###
 cat("使用Lasso进行特征选择\n")
 
-# 使用Lasso进行特征选择并进行交叉验证
-lasso_model <- glmnet(dataX0, dataY0, family = "binomial", nlambda = 1000, alpha = 1)
-cv_fit <- cv.glmnet(dataX0, dataY0, family = "binomial", alpha = 1)
+# 使用SVM进行特征选择和交叉验证
+train_control <- trainControl(method = "cv", number = 10)
+svm_model <- tune(svm, dataY0 ~ ., data = data.frame(dataX0, dataY0 = as.factor(dataY0)), 
+                  ranges = list(cost = 10^(-1:2), gamma = 10^(-4:-1)),
+                  tunecontrol = tune.control(sampling = "cross", cross = 10))
 
-# 获取最佳lambda值
-best_lambda <- cv_fit$lambda.min
-
-# 使用最佳lambda值提取特征
-best_model <- glmnet(dataX0, dataY0, family = "binomial", alpha = 1, lambda = best_lambda)
-selected_features <- which(coef(best_model) != 0)[-1]-1
+best_svm_model <- svm_model$best.model
+selected_features <- which(best_svm_model$coefs != 0) - 1
 dataX0_selected_glm <- dataX0[, selected_features]
 logistic_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_glm), family = binomial)
 
