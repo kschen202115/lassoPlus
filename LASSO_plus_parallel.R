@@ -1,6 +1,6 @@
 library(ggpubr)
 library(corrplot)
-library(glmnet)
+library(e1071)  # 用于SVM
 library(caret)
 library(CBCgrps)
 library(tidyverse)
@@ -26,7 +26,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # 确保提供了参数
 if (length(args) != 0) {
   train_num <- as.numeric(args[1])
-}else{
+} else {
   train_num <- 1
 }
 print('##################################')
@@ -36,39 +36,36 @@ print('##################################')
 # 提取特征表
 get_feature_table <- function(dataX, sorted_indices) {
   feature_table <- dataX[, sorted_indices]
-  # feature_table[] <- lapply(feature_table, as.numeric)
   return(feature_table)
 }
 
-############# sub function for lasso #############
-trylasso=function(dataX0, dataY0, randseed, hyper) {
-
+############# sub function for svm #############
+trysvm=function(dataX0, dataY0, randseed, cost) {
   set.seed(randseed)
   sbjtype1=which(dataY0==1)
   sbjtype0=which(dataY0==0)
   sbjtype1sel=sample(sbjtype1,length(sbjtype1)-5)     # 治愈组随机减去5人
   sbjtype0sel=sample(sbjtype0,length(sbjtype0)-5)     # 非治愈组随机减去5人
   # 剩余样本，为training样本。剩余的5人，为test样本（在特征筛选阶段，test样本不起作用）
-  sbjsel=c(sbjtype0sel,sbjtype1sel);
+  sbjsel=c(sbjtype0sel,sbjtype1sel)
   dataX=dataX0[sbjsel,]
   dataY=dataY0[sbjsel]
   dataXtest=dataX0[-sbjsel,]
   dataYtest=dataY0[-sbjsel]
 
-  fit<- glmnet(dataX,dataY,family = "binomial",lambda = hyper,alpha = 1)    # training model
-  roilog=which(coef(fit)!=0)-1         # index of selected feature (-1 means index of intercept is removed)
+  fit <- svm(dataX, dataY, cost = cost, kernel = "linear")  # training model
+  roilog <- which(fit$coefs != 0)  # index of selected feature
 
-###临时，占位用的
+  ###临时，占位用的
   accmax = 0
   accmax_test = 0
 
-  res=list(roilog,accmax,accmax_test)
+  res = list(roilog, accmax, accmax_test)
   return(res)
-
 }
 
-#逻辑
-logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
+#逻辑回归
+logistic_regression = function(dataX0, dataY0, randseed, feature_table) {
   test_accuracy = 0
   set.seed(randseed)
   sbjtype1=which(dataY0==1)
@@ -77,7 +74,7 @@ logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
   sbjtype0sel=sample(sbjtype0,length(sbjtype0)-5)     # 非治愈组随机减去5人
   # 剩余样本，为training样本。剩余的5人，为test样本（在特征筛选阶段，test样本不起作用）
 
-  sbjsel=c(sbjtype0sel,sbjtype1sel);
+  sbjsel=c(sbjtype0sel,sbjtype1sel)
 
   dataX_glm=feature_table[sbjsel,]
   dataY_glm=dataY0[sbjsel]
@@ -95,8 +92,6 @@ logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
   test_accuracy <- sum(test_pred_classes == dataYtest_glm) / length(dataYtest_glm)
   return(list(model = logistic_model, accuracy = test_accuracy))
 }
-
-
 
 data <- read.csv("TUANDROMD.csv")
 
@@ -119,7 +114,7 @@ train_data <- data.frame(x_train)
 train_data$Label <- y_train
 
 # 动态生成文件名
-train_data_name <- paste0("train_data_",train_num, ".csv")
+train_data_name <- paste0("train_data_", train_num, ".csv")
 
 # 保存训练数据到CSV文件
 write.csv(train_data, train_data_name, row.names = FALSE)
@@ -127,10 +122,8 @@ write.csv(train_data, train_data_name, row.names = FALSE)
 x_test <- x[-train_indices_x, ]
 y_test <- y[-train_indices_x]
 
-
-dataX0=x_train
-dataY0=y_train
-
+dataX0 = x_train
+dataY0 = y_train
 
 grid <-  10^seq(2, -4, length = 100)
 randseed <- 1235673
@@ -140,9 +133,9 @@ cl <- makeCluster(numCores)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = length(grid), style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
-opts <- list(progress=progress)
+opts <- list(progress = progress)
 
-foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('glmnet'),.inorder=TRUE,.options.snow=opts) %dopar% {
+foreach_result <- foreach(cost = grid, .combine = rbind, .packages = c('e1071'), .inorder = TRUE, .options.snow = opts) %dopar% {
   best_feature_table = c()
   best_accuracy = 0.1
   local_results <- data.frame()
@@ -152,7 +145,7 @@ foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('
   feature_counts <- integer(num_features)
   # 循环1000次
   for (i in 1:1000) {
-    res <- trylasso(dataX0, dataY0, randseed + i, fixed_lambda)
+    res <- trysvm(dataX0, dataY0, randseed + i, cost)
     roilog <- res[[1]]
     # 更新特征选择次数
     if (length(roilog) > 0) {
@@ -163,33 +156,33 @@ foreach_result <- foreach(fixed_lambda = grid, .combine = rbind, .packages = c('
   sorted_indices <- order(feature_counts, decreasing = TRUE)
   # 去除出现次数为0的特征索引
   sorted_indices <- sorted_indices[feature_counts[sorted_indices] > 0]
-  #排除特征数量小于2的，不晓得为什么小于2会出问题，2似乎没问题
-  if (length(sorted_indices) >= 2){
-  #进行切片
+  # 排除特征数量小于2的，不晓得为什么小于2会出问题，2似乎没问题
+  if (length(sorted_indices) >= 2) {
+    # 进行切片
     ll = length(sorted_indices)
-    if (length(sorted_indices) > 50){
+    if (length(sorted_indices) > 50) {
       ll = 50
     }
     for (i in 2:ll) {
-      #进行切片
+      # 进行切片
       spilted_indices = head(sorted_indices, i)
       # 获取特征表
       feature_table <- get_feature_table(dataX0, spilted_indices)
-      if (length(feature_table)!=0){
-      # #逻辑回归
+      if (length(feature_table) != 0) {
+        # 逻辑回归
         a_accuracy = 0
         nn = 0
         for (j in 1:1000) {
-          result = logistic_regression(dataX0, dataY0,randseed+j,feature_table)
-          if ( length(result$accuracy) > 0 && !is.na(result$accuracy)){
+          result = logistic_regression(dataX0, dataY0, randseed + j, feature_table)
+          if (length(result$accuracy) > 0 && !is.na(result$accuracy)) {
             nn = nn + 1
             a_accuracy = result$accuracy + a_accuracy
-            m_accuracy = a_accuracy/nn
+            m_accuracy = a_accuracy / nn
           }
         }
         min_selected_count <- min(feature_counts[spilted_indices])
       }
-      local_results <- rbind(local_results, data.frame(FixedLambda = fixed_lambda, Indices = paste(spilted_indices, collapse = ","), Accuracy = m_accuracy,freq = min_selected_count))
+      local_results <- rbind(local_results, data.frame(FixedCost = cost, Indices = paste(spilted_indices, collapse = ","), Accuracy = m_accuracy, freq = min_selected_count))
     }
   }
   return(local_results)
