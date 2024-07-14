@@ -242,7 +242,7 @@ svm_model <- tune(svm, dataY0 ~ ., data = data.frame(dataX0, dataY0 = as.factor(
                   tunecontrol = tune.control(sampling = "cross", cross = 10))
 
 best_svm_model <- svm_model$best.model
-selected_features <- which(best_svm_model$coefs != 0) - 1
+selected_features <- which(best_svm_model$coefs != 0)
 dataX0_selected_glm <- dataX0[, selected_features]
 logistic_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_glm), family = binomial)
 
