@@ -99,7 +99,7 @@ x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
 
 set.seed(1234)
-train_indices <- sample(1:nrow(x), 1500)
+train_indices <- sample(1:nrow(x), 1000)
 
 # 将train_indices分割为10份
 train_indices_split <- split(train_indices, cut(seq_along(train_indices), 10, labels = FALSE))
