@@ -115,7 +115,7 @@ split_samples <- function(indices, num_splits, split_size) {
 }
 
 # 分割为10份，每份100个
-train_indices_split <- split_samples(sample_indices, 10, 100)
+train_indices_split <- split_samples(train_indices, 10, 100)
 
 train_indices_x <- train_indices_split[[train_num]]
 
