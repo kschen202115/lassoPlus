@@ -6,6 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
     - name: restart and upload
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} > token.txt
