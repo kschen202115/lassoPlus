@@ -100,10 +100,22 @@ x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
 
 set.seed(1234)
-train_indices <- sample(1:nrow(x), 1000)
+train_indices <- sample(1:nrow(x), 300)
 
-# 将train_indices分割为10份
-train_indices_split <- split(train_indices, cut(seq_along(train_indices), 10, labels = FALSE))
+# # 将train_indices分割为10份
+# train_indices_split <- split(train_indices, cut(seq_along(train_indices), 10, labels = FALSE))
+
+# 将300个样本的索引分割为10份，每次随机抽取100个
+split_samples <- function(indices, num_splits, split_size) {
+  split_list <- vector("list", num_splits)
+  for (i in seq_len(num_splits)) {
+    split_list[[i]] <- sample(indices, split_size)
+  }
+  return(split_list)
+}
+
+# 分割为10份，每份100个
+train_indices_split <- split_samples(sample_indices, 10, 100)
 
 train_indices_x <- train_indices_split[[train_num]]
 
