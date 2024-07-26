@@ -310,8 +310,8 @@ data <- read.csv(results_name)
 
 # 绘制 y1 和 y2 的密度图
 density_plot <- ggplot(data) + 
-  geom_density(aes(x = y1, color = "y1"), size = 1) +
-  geom_density(aes(x = y2, color = "y2"), size = 1) +
+  geom_density(aes(x = SVM_Plus_Accuracy, color = "SVM_Plus_Accuracy"), size = 1) +
+  geom_density(aes(x = GLM_Accuracy, color = "GLM_Accuracy"), size = 1) +
   labs(x = "Value", y = "Density", color = "Legend") +
   theme_minimal() +
   theme(panel.background = element_rect(fill = "white"),
