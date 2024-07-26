@@ -16,5 +16,5 @@ jobs:
         rm token.txt
         for i in {1..10}
         do
-        gh workflow run tunnel.yml -r ${{ github.ref_name }} -f train_num=$i
+        gh workflow run w-r.yml -r ${{ github.ref_name }} -f train_num=$i
         done
