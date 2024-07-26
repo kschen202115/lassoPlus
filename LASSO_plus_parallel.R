@@ -16,6 +16,7 @@ library(writexl)
 library(doSNOW)
 library(readr)
 library(dplyr)
+library(ggplot2)
 
 currdir = dirname(this.path())
 setwd(currdir)
@@ -93,7 +94,7 @@ logistic_regression = function(dataX0, dataY0, randseed, feature_table) {
   return(list(model = logistic_model, accuracy = test_accuracy))
 }
 
-data <- read.csv("musk.csv")
+data <- read.csv("Hill_Valley_without_noise_Testing.csv")
 
 x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
@@ -285,9 +286,28 @@ foreach_result_2 <- foreach(id = 1:1000, .combine = rbind, .packages = c('glmnet
 
 stopCluster(cl)
 results_df <- as.data.frame(foreach_result_2)
-colnames(results_df) <- c("LASSO_Plus_Accuracy", "GLM_Accuracy", "random_seed")
+colnames(results_df) <- c("SVM_Plus_Accuracy", "GLM_Accuracy", "random_seed")
 
 results_name <- paste0("results_",train_num, ".csv")
 
 write.csv(results_df, file = results_name, row.names = FALSE)
 cat("Results saved successfully.\n")
+
+# 读取 CSV 文件
+data <- read.csv(results_name)
+
+# 绘制 y1 和 y2 的密度图
+density_plot <- ggplot(data) + 
+  geom_density(aes(x = y1, color = "y1"), size = 1) +
+  geom_density(aes(x = y2, color = "y2"), size = 1) +
+  labs(x = "Value", y = "Density", color = "Legend") +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white"))
+
+# 显示图像
+print(density_plot)
+
+# 保存图像
+imgname <- paste0("plot_",train_num, ".png")
+ggsave(imgname, plot = density_plot, width = 8, height = 6)
