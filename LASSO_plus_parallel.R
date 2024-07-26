@@ -317,8 +317,8 @@ density_plot <- ggplot(data) +
   theme(panel.background = element_rect(fill = "white"),
         plot.background = element_rect(fill = "white"))
 
-# 显示图像
-print(density_plot)
+# # 显示图像
+# print(density_plot)
 
 # 保存图像
 imgname <- paste0("plot_",train_num, ".png")
