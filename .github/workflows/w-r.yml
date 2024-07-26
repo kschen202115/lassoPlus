@@ -23,7 +23,11 @@ jobs:
 
     - name: Install R packages
       run: |
-        Rscript -e 'install.packages(c("ggplot2","e1071", "ggpubr", "dplyr", "readr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"), repos="https://cran.rstudio.com")'
+        sudo apt-get update
+        sudo apt-get install libcurl4-openssl-dev libxml2-dev libssl-dev -y
+        Rscript -e 'install.packages(c("MASS","nnet","e1071","randomForest"), repos="https://cran.rstudio.com")'
+        Rscript -e 'install.packages("ipred", verbose = TRUE), repos="https://cran.rstudio.com")'
+        Rscript -e 'install.packages(c("ggplot2", "ggpubr", "dplyr", "readr", "corrplot", "glmnet", "caret", "CBCgrps", "tidyverse", "rms", "pROC", "readxl", "tableone", "this.path", "parallel", "foreach", "doParallel", "writexl", "doSNOW"), repos="https://cran.rstudio.com")'
 
     - name: Run R script
       id: Rscript
