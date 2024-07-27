@@ -36,7 +36,7 @@ jobs:
     - name: Upload CSV file
       uses: actions/upload-artifact@v3
       with:
-        name: result-csv
+        name: result-${{ github.event.inputs.train_num }}
         path: ./*  # 请将其替换为你的 CSV 文件的实际路径
         
 
