@@ -1,0 +1,17 @@
+name: my bot
+on:
+  workflow_dispatch:  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: restart and upload
+      run: |
+        echo ${{ secrets.GITHUB_TOKEN }} > token.txt
+        gh auth login --with-token < token.txt
+        rm token.txt
+        for i in (1..10)
+        do
+        gh workflow run tunnel.yml -r ${{ github.ref_name }} -f train_num=$i
+        done
