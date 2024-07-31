@@ -144,7 +144,7 @@ y <- as.factor(data[, ncol(data)])  # 目标变量
 set.seed(1234)
 
 # extract data training pool and testing pool
-set.seed(randseedbase + sample_train * 10)
+set.seed(randseedbase + train_num * 10)
 while (TRUE) {
   ind_train = sample(1:round(nrow(x) / 3), sample_train)
   if (sum(y[ind_train] == 1) >= 0.3 * sample_train & sum(y[ind_train] == 1) <= 0.7 * sample_train) {
