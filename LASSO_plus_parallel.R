@@ -33,6 +33,42 @@ print('##################################')
 print(train_num)
 print('##################################')
 
+
+############### function for data ###############
+data_extract=function(dataX0,dataY0,randseed,sbjnum_ratio) {
+  set.seed(randseed)
+  
+  sbjtype1=which(dataY0==1)
+  sbjtype0=which(dataY0==0)
+  
+  sbjmin=min(c(length(sbjtype1),length(sbjtype0)))            # 取类型数量相对较少的一组的sample数
+  
+  sbjtype1sel=sample(sbjtype1,round(sbjmin*sbjnum_ratio))     # 取部分sample作为训练集
+  sbjtype0sel=sample(sbjtype0,round(sbjmin*sbjnum_ratio))     # 取部分sample作为训练集
+  # 剩余样本，为training样本。剩余的5人，为test样本（在特征筛选阶段，test样本不起作用）
+  
+  sbjsel=c(sbjtype0sel,sbjtype1sel)
+  
+  dataXtrain=dataX0[sbjsel,]
+  dataYtrain=dataY0[sbjsel]
+  
+  dataYtest_pool=dataY0[-sbjsel]
+  dataXtest_pool=dataX0[-sbjsel,]
+  
+  sbjtype1test=which(dataYtest_pool==1)
+  sbjtype0test=which(dataYtest_pool==0)
+  sbjmin_test=min(c(length(sbjtype1test),length(sbjtype0test)))
+  
+  sbjtype1sel_test=sample(sbjtype1test,sbjmin_test)     # 取部分sample作为训练集
+  sbjtype0sel_test=sample(sbjtype0test,sbjmin_test)     # 取部分sample作为训练集
+  
+  dataXtest=dataXtest_pool[c(sbjtype1sel_test,sbjtype0sel_test),]
+  dataYtest=dataYtest_pool[c(sbjtype1sel_test,sbjtype0sel_test)]
+  
+  return(list(dataXtrain,dataYtrain,dataXtest,dataYtest))
+}
+
+
 # 提取特征表
 get_feature_table <- function(dataX, sorted_indices) {
   feature_table <- dataX[, sorted_indices]
@@ -67,52 +103,68 @@ trylasso=function(dataX0, dataY0, randseed, hyper) {
 
 }
 
+
 #逻辑
 logistic_regression = function( dataX0, dataY0, randseed, feature_table) {
   test_accuracy = 0
-  set.seed(randseed)
-  sbjtype1=which(dataY0==1)
-  sbjtype0=which(dataY0==0)
-  sbjtype1sel=sample(sbjtype1,length(sbjtype1)-5)     # 治愈组随机减去5人
-  sbjtype0sel=sample(sbjtype0,length(sbjtype0)-5)     # 非治愈组随机减去5人
-  # 剩余样本，为training样本。剩余的5人，为test样本（在特征筛选阶段，test样本不起作用）
+  # 使用 data_extract 函数进行数据处理
+  data_splits = data_extract(feature_table, dataY0, randseed, 0.85)
+  dataXtrain = data_splits[[1]]
+  dataYtrain = data_splits[[2]]
+  dataXtest = data_splits[[3]]
+  dataYtest = data_splits[[4]]
+  # 将提取的特征数据转换为数据框
+  feature_table_scaled_train <- as.data.frame(dataXtrain)
+  feature_table_scaled_test <- as.data.frame(dataXtest)
 
-  sbjsel=c(sbjtype0sel,sbjtype1sel);
-
-  dataX_glm=feature_table[sbjsel,]
-  dataY_glm=dataY0[sbjsel]
-
-  dataXtest_glm=feature_table[-sbjsel,]
-  dataYtest_glm=dataY0[-sbjsel]
-
-  feature_table_scaled <- as.data.frame(dataX_glm)
-  feature_table_scaled_test <- as.data.frame(dataXtest_glm)
-
-  # 逻辑回归
-  logistic_model <- glm(dataY_glm ~ ., data = feature_table_scaled, family = binomial)
+  # 逻辑回归模型训练
+  logistic_model <- glm(dataYtrain ~ ., data = feature_table_scaled_train, family = binomial)
+  # 模型预测
   test_predictions <- predict(logistic_model, newdata = feature_table_scaled_test, type = "response")
   test_pred_classes <- ifelse(test_predictions > 0.5, 1, 0)
-  test_accuracy <- sum(test_pred_classes == dataYtest_glm) / length(dataYtest_glm)
+  # 计算测试集上的准确率
+  test_accuracy <- sum(test_pred_classes == dataYtest) / length(dataYtest)
   return(list(model = logistic_model, accuracy = test_accuracy))
 }
 
 
 
+
 data <- read.csv("musk.csv")
+
+roimaxpred = 50   # 最终预测时的最大特征数
+randseedbase = 100
+sample_train = 100          # size for training set
+sbjnum_ratio = 0.85
+sample_test = 200           # size for testing set
 
 x <- as.matrix(data[, -ncol(data)])  # 排除目标变量列
 y <- as.factor(data[, ncol(data)])  # 目标变量
 
 set.seed(1234)
-train_indices <- sample(1:nrow(x), 1000)
 
-# 将train_indices分割为10份
-train_indices_split <- split(train_indices, cut(seq_along(train_indices), 10, labels = FALSE))
+# extract data training pool and testing pool
+set.seed(randseedbase + sample_train * 10)
+while (TRUE) {
+  ind_train = sample(1:round(nrow(x) / 3), sample_train)
+  if (sum(y[ind_train] == 1) >= 0.3 * sample_train & sum(y[ind_train] == 1) <= 0.7 * sample_train) {
+    break
+  }
+}
+print(y)
+x_train = x[ind_train, ]
+y_train = y[ind_train]
+x_test = x[(round(nrow(x) / 3) + 1):nrow(x), ]
+y_test = y[(round(nrow(x) / 3) + 1):nrow(x)]
 
-train_indices_x <- train_indices_split[[train_num]]
+print('##################################')
+print("Training data:")
+print(x_train)
+print(y_train)
+print("Testing data:")
+print(x_test)
+print(y_test)
 
-x_train <- x[train_indices_x, ]
-y_train <- y[train_indices_x]
 
 # 将训练数据合并成一个数据框
 train_data <- data.frame(x_train)
@@ -124,8 +176,6 @@ train_data_name <- paste0("train_data_",train_num, ".csv")
 # 保存训练数据到CSV文件
 write.csv(train_data, train_data_name, row.names = FALSE)
 
-x_test <- x[-train_indices_x, ]
-y_test <- y[-train_indices_x]
 
 
 dataX0=x_train
@@ -136,7 +186,7 @@ grid <-  10^seq(2, -4, length = 100)
 randseed <- 1235673
 numCores <- detectCores()
 print(numCores)
-cl <- makeCluster(numCores)
+cl <- makeCluster(numCores-4)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = length(grid), style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
@@ -259,7 +309,7 @@ dataX0_selected_lasso <- dataX0[, feature_list]
 my_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_lasso), family = binomial)
 ##进行1000次test
 
-cl <- makeCluster(numCores)
+cl <- makeCluster(numCores-4)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = 1000, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
@@ -300,3 +350,22 @@ results_name <- paste0("results_",train_num, ".csv")
 
 write.csv(results_df, file = results_name, row.names = FALSE)
 cat("Results saved successfully.\n")
+
+# 读取 CSV 文件
+data <- read.csv(results_name)
+
+# 绘制 y1 和 y2 的密度图
+density_plot <- ggplot(data) + 
+  geom_density(aes(x = SVM_Plus_Accuracy, color = "LASSO_Plus_Accuracy"), size = 1) +
+  geom_density(aes(x = GLM_Accuracy, color = "GLM_Accuracy"), size = 1) +
+  labs(x = "Value", y = "Density", color = "Legend") +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white"))
+
+# # 显示图像
+# print(density_plot)
+
+# 保存图像
+imgname <- paste0("plot_",train_num, ".png")
+ggsave(imgname, plot = density_plot, width = 8, height = 6)
