@@ -186,7 +186,7 @@ grid <-  10^seq(2, -4, length = 100)
 randseed <- 1235673
 numCores <- detectCores()
 print(numCores)
-cl <- makeCluster(numCores-4)
+cl <- makeCluster(numCores)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = length(grid), style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
@@ -309,7 +309,7 @@ dataX0_selected_lasso <- dataX0[, feature_list]
 my_model <- glm(dataY0 ~ ., data = data.frame(dataX0_selected_lasso), family = binomial)
 ##进行1000次test
 
-cl <- makeCluster(numCores-4)
+cl <- makeCluster(numCores)
 registerDoSNOW(cl)
 pb <- txtProgressBar(min = 0, max = 1000, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
