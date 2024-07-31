@@ -154,8 +154,11 @@ while (TRUE) {
 print(y)
 x_train = x[ind_train, ]
 y_train = y[ind_train]
-x_test = x[(round(nrow(x) / 3) + 1):nrow(x), ]
-y_test = y[(round(nrow(x) / 3) + 1):nrow(x)]
+# 测试集为原始数据减去训练集的部分
+ind_test = setdiff(1:nrow(x), ind_train)
+x_test = x[ind_test, ]
+y_test = y[ind_test]
+
 
 print('##################################')
 print("Training data:")
@@ -356,7 +359,7 @@ data <- read.csv(results_name)
 
 # 绘制 y1 和 y2 的密度图
 density_plot <- ggplot(data) + 
-  geom_density(aes(x = SVM_Plus_Accuracy, color = "LASSO_Plus_Accuracy"), size = 1) +
+  geom_density(aes(x = LASSO_Plus_Accuracy, color = "LASSO_Plus_Accuracy"), size = 1) +
   geom_density(aes(x = GLM_Accuracy, color = "GLM_Accuracy"), size = 1) +
   labs(x = "Value", y = "Density", color = "Legend") +
   theme_minimal() +
