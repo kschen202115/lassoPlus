@@ -16,7 +16,7 @@ library(writexl)
 library(doSNOW)
 library(readr)
 library(dplyr)
-
+library(ggplot2)
 currdir = dirname(this.path())
 setwd(currdir)
 
